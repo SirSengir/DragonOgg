@@ -48,8 +48,7 @@ namespace DragonOgg.MediaPlayer
 	public class OggFile : IDisposable 
 	{
 		
-		private string m_Filename;			// Filename
-		
+        private IOggFileSource m_Source;
 		private VorbisFile m_CSVorbisFile; 	// CSVorbis file object
         private VorbisFileInstance m_CSVorbisFileInstance; // An instance of the currently playing file
 		private TagLib.File m_TagLibFile;	// TagLibSharp file object
@@ -82,69 +81,29 @@ namespace DragonOgg.MediaPlayer
             if (!(System.IO.File.Exists (Filename))) {
                 throw new OggFileReadException ("File not found", Filename);
             }
-            // Load the relevant objects
-            m_Filename = Filename;
-            try
-            {
-                m_CSVorbisFile = new VorbisFile (m_Filename);
-            }
-            catch (Exception ex)
-            {
-                throw new OggFileReadException ("Unable to open file for data reading\n" + ex.Message, Filename);	
-            }
 
-            try
-            {
-                m_TagLibFile = TagLib.File.Create (m_Filename);
-            }
-            catch (TagLib.UnsupportedFormatException ex)
-            {
-                throw new OggFileReadException ("Unsupported format (not an ogg?)\n" + ex.Message, Filename);
-            } catch (TagLib.CorruptFileException ex)
-            {
-                throw new OggFileCorruptException (ex.Message, Filename, "Tags");
-            }
-
-            LoadOggFile ();
+            LoadOggFile (new LocalOggFile (Filename));
         }
 		
-        public OggFile(TagLib.File.IFileAbstraction abstraction) {
-            m_Filename = abstraction.Name;
-            try
-            {
-                m_CSVorbisFile = new VorbisFile (abstraction.ReadStream);
-            }
-            catch (Exception ex)
-            {
-                throw new OggFileReadException ("Unable to open file for data reading\n" + ex.Message, abstraction.Name);   
-            }
-
-            try
-            {
-                m_TagLibFile = TagLib.File.Create(abstraction, "audio/ogg", ReadStyle.Average);
-            }
-            catch (TagLib.UnsupportedFormatException ex)
-            {
-                throw new OggFileReadException ("Unsupported format (not an ogg?)\n" + ex.Message, abstraction.Name);
-            } catch (TagLib.CorruptFileException ex)
-            {
-                throw new OggFileCorruptException (ex.Message, abstraction.Name, "Tags");
-            }
-
-            LoadOggFile ();
+        public OggFile(IOggFileSource source) {
+            LoadOggFile (source);
         }
 
-        private void LoadOggFile()
+        private void LoadOggFile(IOggFileSource source)
         {	
+            m_Source = source;
+            m_CSVorbisFile = source.VorbisFile;
+            m_TagLibFile = source.TagLibFile;
+
 			// Populate some other info shizzle and do a little bit of sanity checking
 			m_Streams = m_CSVorbisFile.streams();
-            if (m_Streams<=0) { throw new OggFileReadException("File doesn't contain any logical bitstreams", m_Filename); }
+            if (m_Streams<=0) { throw new OggFileReadException("File doesn't contain any logical bitstreams", source.FileName); }
 			// Assuming <0 is for whole file and >=0 is for specific logical bitstreams
 			m_Bitrate = m_CSVorbisFile.bitrate(-1);
 			m_LengthTime = (int)m_CSVorbisFile.time_total(-1);
 			// Figure out the ALFormat of the stream
 			m_Info = m_CSVorbisFile.getInfo();	// Get the info of the first stream, assuming all streams are the same? Dunno if this is safe tbh
-            if (m_Info[0] == null) { throw new OggFileReadException("Unable to determine Format{FileInfo.Channels} for first bitstream", m_Filename); }
+            if (m_Info[0] == null) { throw new OggFileReadException("Unable to determine Format{FileInfo.Channels} for first bitstream", source.FileName); }
 			if (m_TagLibFile.Properties.AudioBitrate==16) {
 				m_Format = (m_Info[0].channels)==1 ? ALFormat.Mono16 : ALFormat.Stereo16; // This looks like a fudge, but I've seen it a couple of times (what about the other formats I wonder?)
 			}
@@ -175,7 +134,7 @@ namespace DragonOgg.MediaPlayer
 			case OggTags.Album: return m_TagLibFile.Tag.Album;
 			case OggTags.Genre: return m_TagLibFile.Tag.FirstGenre;
 			case OggTags.TrackNumber: return m_TagLibFile.Tag.Track.ToString();
-			case OggTags.Filename: return m_Filename;
+            case OggTags.Filename: return m_Source.FileName;
 			case OggTags.Bitrate: return m_Bitrate.ToString();
 			case OggTags.Length: return m_LengthTime.ToString();
 			default: return null;
@@ -517,11 +476,11 @@ namespace DragonOgg.MediaPlayer
                 m_CSVorbisFileInstance = m_CSVorbisFile.makeInstance();
 
 				m_TagLibFile = null;
-				m_TagLibFile = TagLib.File.Create(m_Filename);
+                m_TagLibFile = m_Source.TagLibFile;
 			}
 			catch (Exception ex)
 			{
-				throw new Exception("Unable to reload OggFile [" + m_Filename + "]", ex);	
+                throw new Exception("Unable to reload OggFile [" + m_Source.FileName + "]", ex);	
 			}
 		}
 		

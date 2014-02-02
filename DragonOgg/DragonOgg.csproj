@@ -222,6 +222,8 @@
     <Compile Include="MediaPlayer\OggPlayerFBN.cs" />
     <Compile Include="MediaPlayer\OggPlayerVBN.cs" />
     <Compile Include="MediaPlayer\Queues.cs" />
+    <Compile Include="MediaPlayer\IOggFileSource.cs" />
+    <Compile Include="MediaPlayer\LocalOggFile.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ProjectExtensions>
