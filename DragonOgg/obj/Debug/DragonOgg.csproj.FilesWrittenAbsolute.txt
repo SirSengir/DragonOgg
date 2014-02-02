@@ -1,0 +1,7 @@
+/Users/florian/Dev/Libraries/DragonOgg/DragonOgg/bin/Debug/OpenTK.dll.config
+/Users/florian/Dev/Libraries/DragonOgg/DragonOgg/bin/Debug/DragonOgg.dll.mdb
+/Users/florian/Dev/Libraries/DragonOgg/DragonOgg/bin/Debug/DragonOgg.dll
+/Users/florian/Dev/Libraries/DragonOgg/DragonOgg/obj/Debug/DragonOgg.dll
+/Users/florian/Dev/Libraries/DragonOgg/DragonOgg/obj/Debug/DragonOgg.dll.mdb
+/Users/florian/Dev/Libraries/DragonOgg/DragonOgg/bin/Debug/OpenTK.dll
+/Users/florian/Dev/Libraries/DragonOgg/DragonOgg/bin/Debug/OpenTK.dll.mdb
